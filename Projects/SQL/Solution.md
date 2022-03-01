@@ -48,59 +48,28 @@ group by customer_id
 
 To get the first item we need to rank the items ordered by each customer in a temporary table using `WITH` statement. 
 
-After we have those ranks, we can select the rows with the rank = 1. As the customer A made two orders at the first day, we need to use `ORDER BY` in the window function by two criteria: `order_date` and `product_id`.
-
-In the final query I cast date as `varchar` to remove time ans show the date only.
+After we have those ranks, we can select the rows with the rank = 1. 
 
 ````sql
-with item_rank_by_order_date as (select s.customer_id, s.product_id, m.product_name, dense_rank() over(partition by s.customer_id order by s.order_date) as rnk
-from dannys_diner.sales s inner join dannys_diner.menu m on s.product_id = m.product_id)
+with item_rank_by_order_date as (
+select s.customer_id, s.product_id, m.product_name, dense_rank() over(partition by s.customer_id order by s.order_date) as rnk
+from dannys_diner.sales s inner join dannys_diner.menu m 
+on s.product_id = m.product_id)
 
 select customer_id, product_name 
 from item_rank_by_order_date
 where rnk=1
 ````  
-![изображение](https://www.notion.so/Danny-s-Diner-b742c33212c24b01aec05ee6b8ef5fc0#ce9e2e26489d4a36b7305ca0ba27fd1d)
-| customer_id | product_name | order_date |
-| ----------- | ------------ | ---------- |
-| A           | sushi        | 2021-01-01 |
-| B           | curry        | 2021-01-01 |
-| C           | ramen        | 2021-01-01 |
+| customer_id | product_name |
+| ----------- | ------------ |
+| A           | sushi        |
+| A           | curry        |
+| B           | curry        |
+| C           | ramen        |
+| C           | ramen        |
 
 ---
-
-The query without using window functions, returns two results for customer A, one result for customer B and two results for customer C:
-
-````sql
-SELECT
-  customer_id,
-  product_name,
-  order_date::varchar
-FROM
-  dannys_diner.sales
-  JOIN dannys_diner.menu ON dannys_diner.sales.product_id = dannys_diner.menu.product_id
-WHERE
-  order_date IN (
-    SELECT
-      order_date
-    FROM
-      dannys_diner.sales
-    LIMIT
-      1
-  )
-ORDER BY
-  1
-  ````
-  
-| customer_id | product_name | order_date |
-| ----------- | ------------ | ---------- |
-| A           | sushi        | 2021-01-01 |
-| A           | curry        | 2021-01-01 |
-| B           | curry        | 2021-01-01 |
-| C           | ramen        | 2021-01-01 |
-| C           | ramen        | 2021-01-01 |
-
----  
+ 
   
 ***The first purchase for customer A was :sushi:***
 
@@ -111,30 +80,15 @@ ORDER BY
 #### 4. What is the most purchased item on the menu and how many times was it purchased by all customers?
 
 ````sql
-SET
-  search_path = dannys_diner;
-WITH totals AS (
-    SELECT
-      product_name,
-      COUNT(product_name) AS total_purchase_quantity,
-      row_number() OVER() AS rank
-    FROM
-      sales AS s
-      JOIN menu AS m ON s.product_id = m.product_id
-    GROUP BY
-      1
-  )
-SELECT
-  product_name,
-  total_purchase_quantity
-FROM
-  totals
-WHERE
-  rank = 1
+select product_id, count(*) from dannys_diner.sales
+group by product_id
   ````
- | product_name | total_purchase_quantity |
+| product_id   | count                   |
 | ------------ | ----------------------- |
-| ramen        | 8                       |
+| 3            | 8                       |
+| 2            | 4                       |
+| 1            | 3                       |
+
 
 ---
  
@@ -173,47 +127,6 @@ ORDER BY
 
 ---
 
-Now we can select the most popular products for each customer using `rank` window function:
-
-````sql
-SET
-  search_path = dannys_diner;
-WITH ranked AS (
-    SELECT
-      customer_id,
-      product_name,
-      COUNT(product_name) AS total_purchase_quantity,
-      rank() OVER (
-        PARTITION BY customer_id
-        ORDER BY
-          COUNT(product_name) desc
-      ) AS rank
-    FROM
-      sales AS s
-      JOIN menu AS m ON s.product_id = m.product_id
-    GROUP BY
-      customer_id,
-      product_name
-  )
-SELECT
-  customer_id,
-  product_name,
-  total_purchase_quantity
-FROM
-  ranked
-WHERE
-  rank = 1
- ```` 
- 
-| customer_id | product_name | total_purchase_quantity |
-| ----------- | ------------ | ----------------------- |
-| A           | ramen        | 3                       |
-| B           | ramen        | 2                       |
-| B           | curry        | 2                       |
-| B           | sushi        | 2                       |
-| C           | ramen        | 3                       |
-
----
  
 ***The most popular item for customer A was :ramen:, they purchased it 3 times.***
 
