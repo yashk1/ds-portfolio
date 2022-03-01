@@ -60,7 +60,7 @@ select customer_id, product_name
 from item_rank_by_order_date
 where rnk=1
 ````  
-![link](https://www.notion.so/Danny-s-Diner-b742c33212c24b01aec05ee6b8ef5fc0#ce9e2e26489d4a36b7305ca0ba27fd1d)
+![изображение](https://www.notion.so/Danny-s-Diner-b742c33212c24b01aec05ee6b8ef5fc0#ce9e2e26489d4a36b7305ca0ba27fd1d)
 | customer_id | product_name | order_date |
 | ----------- | ------------ | ---------- |
 | A           | sushi        | 2021-01-01 |
