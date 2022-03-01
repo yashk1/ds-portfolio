@@ -1,4 +1,4 @@
-# Case Study #1 - Danny's Diner ::rice::
+# Case Study 1 - Danny's Diner :rice:
 
 <img src="https://8weeksqlchallenge.com/images/case-study-designs/1.png" width="500">
 
@@ -58,10 +58,8 @@ The final members table captures the `join_date` when a `customer_id` joined the
 ![изображение](https://user-images.githubusercontent.com/98699089/156034410-8775d5d2-eda5-4453-9e33-54bfef253084.png)
 
 
-## Table of Contents
+## Case Study Questions
 
-
-[Case Study Questions]()
 
 [1. What is the total amount each customer spent at the restaurant?]()
 
