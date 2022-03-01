@@ -71,11 +71,11 @@ where rnk=1
 ---
  
   
-***The first purchase for customer A was :sushi:***
+The first purchase for customer A was :sushi
 
-***The first purchase for customer B was :curry:***
+The first purchase for customer B was :curry:
 
-***The first (and the only) purchase for customer C was :ramen:***
+The first (and the only) purchase for customer C was :ramen:
 
 #### 4. What is the most purchased item on the menu and how many times was it purchased by all customers?
 
@@ -92,7 +92,7 @@ group by product_id
 
 ---
  
-***The most purchased item on the menu was :ramen:, it was purchased 8 times in total.***
+The most purchased item on the menu was :ramen:, it was purchased 8 times in total
 
 #### 5. Which item was the most popular for each customer?
 
@@ -128,11 +128,11 @@ ORDER BY
 ---
 
  
-***The most popular item for customer A was :ramen:, they purchased it 3 times.***
+The most popular item for customer A was :ramen:, they purchased it 3 times
 
-***The most popular item for customer B was :curry:, :ramen: and :sushi:, they purchased each dish 2 times.***
+The most popular item for customer B was :curry:, :ramen: and :sushi:, they purchased each dish 2 times
 
-***The most popular item for customer C was :ramen:, they purchased it 3 times.***
+The most popular item for customer C was :ramen:, they purchased it 3 times
 
 #### 6. Which item was purchased first by the customer after they became a member?
 
@@ -140,37 +140,22 @@ Let's consider that if the purchase date matches the membership date, then the p
 It means that we need to include this date in the WHERE statement.
 
 ````sql
-SET
-  search_path = dannys_diner;
-WITH ranked AS (
-    SELECT
-      s.customer_id,
-      order_date,
-      join_date,
-      product_name,
-      row_number() OVER (
-        PARTITION BY s.customer_id
-        ORDER BY
-          order_date
-      ) AS rank
-    FROM
-      sales AS s
-      JOIN members AS mm ON s.customer_id = mm.customer_id
-      JOIN menu AS m ON s.product_id = m.product_id
-    WHERE
-      order_date >= join_date
-  )
-SELECT
-  customer_id,
-  join_date::varchar,
-  order_date::varchar,
-  product_name
-FROM
-  ranked AS r
-WHERE
-  rank = 1
-ORDER BY
-  1
+WITH member_sales_cte AS 
+(
+ SELECT s.customer_id, m.join_date, s.order_date,   s.product_id,
+         DENSE_RANK() OVER(PARTITION BY s.customer_id
+  ORDER BY s.order_date) AS rank
+     FROM dannys_diner.sales AS s
+ JOIN dannys_diner.members AS m
+  ON s.customer_id = m.customer_id
+ WHERE s.order_date >= m.join_date
+)
+
+SELECT s.customer_id,m.join_date, s.order_date, m2.product_name 
+FROM member_sales_cte AS s
+JOIN dannys_diner.menu AS m2
+ ON s.product_id = m2.product_id
+WHERE rank = 1;
   ````
 
 | customer_id | join_date  | order_date | product_name |
@@ -188,53 +173,34 @@ Let's consider that if the purchase date matches the membership date, then the p
 It means that we need to exclude this date in the `WHERE` statement.
 
 ````sql
-SET
-  search_path = dannys_diner;
-WITH ranked AS (
-    SELECT
-      s.customer_id,
-      order_date,
-      join_date,
-      product_name,
-      rank() OVER (
-        PARTITION BY s.customer_id
-        ORDER BY
-          order_date DESC
-      ) AS rank
-    FROM
-      sales AS s
-      JOIN members AS mm ON s.customer_id = mm.customer_id
-      JOIN menu AS m ON s.product_id = m.product_id
-    WHERE
-      order_date < join_date
-  )
-SELECT
-  customer_id,
-  join_date::varchar,
-  order_date::varchar,
-  product_name
-FROM
-  ranked AS r
-WHERE
-  rank = 1
-ORDER BY
-  1
+with customer_purchase_before_join_date as(select s.customer_id, m.join_date, s.product_id, s.order_date,
+dense_rank() over(partition by s.customer_id order by s.order_date DESC) as rnk
+from dannys_diner.sales s join dannys_diner.members m 
+on m.customer_id = s.customer_id 
+where s.order_date < m.join_date)
+
+select customer_id,join_date, order_date , t2.product_name
+from customer_purchase_before_join_date t1
+join dannys_diner.menu t2
+on t1.product_id=t2.product_id
+where rnk =1
   ````
 
 | customer_id | join_date  | order_date | product_name |
 | ----------- | ---------- | ---------- | ------------ |
+| B           | 2021-01-09 | 2021-01-04 | sushi        |
 | A           | 2021-01-07 | 2021-01-01 | sushi        |
 | A           | 2021-01-07 | 2021-01-01 | curry        |
-| B           | 2021-01-09 | 2021-01-04 | sushi        |
+
 
 ---
 
 Customer A purchased two items on January, 1 - the date before they became a member. 
 We need more information to tell exactly what item was purchased before they became a member: order number or purchase time. I am keeping two items in the list for now.
 
-***Customer A purchased :curry: and :sushi: on 2021-01-01***
+Customer B purchased :sushi: on 2021-01-04
 
-***Customer B purchased :sushi: on 2021-01-04***
+Customer A purchased :curry: and :sushi: on 2021-01-01
 
 #### 8. What is the total items and amount spent for each member before they became a member?
 
@@ -242,62 +208,41 @@ Let's consider that if the purchase date matches the membership date, then the p
 It means that we need to exclude this date in the WHERE statement.
 
 ````sql
-SET
-  search_path = dannys_diner;
-SELECT
-  s.customer_id,
-  COUNT(product_name) AS total_number_of_items,
-  SUM(price) AS total_purchase_amount
-FROM
-  sales AS s
-  JOIN members AS mm ON s.customer_id = mm.customer_id
-  JOIN menu AS m ON s.product_id = m.product_id
-WHERE
-  order_date < join_date
-GROUP BY
-  1
-ORDER BY
-  1
+select mem.customer_id, count(distinct m.product_id) , sum(price) as amount_spent_before_joining
+from dannys_diner.menu m join dannys_diner.sales s
+on m.product_id = s.product_id
+inner join dannys_diner.members mem 
+on mem.customer_id = s.customer_id
+where s.order_date < mem.join_date 
+group by mem.customer_id
   ````
 
-| customer_id | total_number_of_items | total_purchase_amount |
-| ----------- | --------------------- | --------------------- |
-| A           | 2                     | 25                    |
-| B           | 3                     | 40                    |
+| customer_id | count                 | amount_spent_before_joining |
+| ----------- | --------------------- | --------------------------- |
+| A           | 2                     | 25                          |
+| B           | 3                     | 40                          |
 
 ---
 
 #### 9. If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
 
 ````sql
-SET
-  search_path = dannys_diner;
-SELECT
-  customer_id,
-  SUM(point) AS points
-FROM
-  sales AS s
-  JOIN (
-    SELECT
-      product_id,
-      CASE
-        WHEN product_id = 1 THEN price * 20
-        ELSE price * 10
-      END AS point
-    FROM
-      menu
-  ) AS p ON s.product_id = p.product_id
-GROUP BY
-  1
-ORDER BY
-  1
+select s.customer_id , 
+Sum(case 
+  when 
+    m.product_name ='sushi' then m.price *10 * 2 
+    else m.price * 10 
+END) as points
+from dannys_diner.menu m inner join dannys_diner.sales s 
+on m.product_id = s.product_id
+group by s.customer_id
   ````
 
 | customer_id | points |
 | ----------- | ------ |
-| A           | 860    |
 | B           | 940    |
 | C           | 360    |
+| A           | 860    |
 
 ---
 
@@ -364,123 +309,47 @@ ORDER BY
 
 ---
 
-***Customer A at the end of January would have 1370 points***
+Customer A at the end of January would have 1370 points
 
-***Customer B at the end of January would have 820 points*** and 0 benefits from their first week membership
+Customer B at the end of January would have 820 points*** and 0 benefits from their first week membership
 
 ## Bonus Questions
 
-### Join All The Things
+### Join  and Rank All The Things
 
 ````sql
-SET
-  search_path = dannys_diner;
-WITH members AS (
-    SELECT
-      s.customer_id,
-      order_date,
-      product_name,
-      price,
-      join_date
-    FROM
-      sales AS s
-      JOIN menu AS m ON s.product_id = m.product_id
-      LEFT JOIN members AS mm ON s.customer_id = mm.customer_id
-  )
-SELECT
-  customer_id,
-  order_date::varchar,
-  product_name,
-  price,
-  CASE
-    WHEN order_date >= join_date THEN 'Y'
-    ELSE 'N'
-  END AS member
-FROM
-  members
-ORDER BY
-  1,
-  2,
-  3
+with cte as (select s.customer_id, s.order_date, m.product_name , m.price,
+case when s.order_date < mem.join_date then 'N'
+else 'Y'
+END as member
+from dannys_diner.sales s inner join dannys_diner.menu m 
+on s.product_id = m.product_id
+inner join dannys_diner.members mem 
+on mem.customer_id = s.customer_id
+order by s.customer_id, s.order_date)
+
+select *, case when member='N' then NULL
+else dense_rank() over (partition by customer_id,member order by order_date)
+end as ranking
+from cte
 ````
 
-| customer_id | order_date | product_name | price | member |
-| ----------- | ---------- | ------------ | ----- | ------ |
-| A           | 2021-01-01 | curry        | 15    | N      |
-| A           | 2021-01-01 | sushi        | 10    | N      |
-| A           | 2021-01-07 | curry        | 15    | Y      |
-| A           | 2021-01-10 | ramen        | 12    | Y      |
-| A           | 2021-01-11 | ramen        | 12    | Y      |
-| A           | 2021-01-11 | ramen        | 12    | Y      |
-| B           | 2021-01-01 | curry        | 15    | N      |
-| B           | 2021-01-02 | curry        | 15    | N      |
-| B           | 2021-01-04 | sushi        | 10    | N      |
-| B           | 2021-01-11 | sushi        | 10    | Y      |
-| B           | 2021-01-16 | ramen        | 12    | Y      |
-| B           | 2021-02-01 | ramen        | 12    | Y      |
-| C           | 2021-01-01 | ramen        | 12    | N      |
-| C           | 2021-01-01 | ramen        | 12    | N      |
-| C           | 2021-01-07 | ramen        | 12    | N      |
-
----
-
-### Rank All The Things
-
-First we need to select all the necessary columns from `sales`, `menu` and `members` tables - we do that using CTE and `WITH` statement.
-Next we can rank orders from this table by `customer_id` and `member` columns.
-
-````sql
-SET
-  search_path = dannys_diner;
-WITH members AS (
-    SELECT
-      s.customer_id,
-      order_date::varchar,
-      product_name,
-      price,
-      CASE
-        WHEN order_date >= join_date THEN 'Y'
-        ELSE 'N'
-      END AS member
-    FROM
-      sales AS s
-      JOIN menu AS m ON s.product_id = m.product_id
-      LEFT JOIN members AS mm ON s.customer_id = mm.customer_id
-  )
-SELECT
-  *,
-  CASE
-    WHEN member = 'Y' THEN rank() OVER (
-      PARTITION BY customer_id,
-      member
-      ORDER BY
-        order_date
-    )
-  END AS ranking
-FROM
-  members
-ORDER BY
-  customer_id,
-  order_date,
-  product_name
-  ````
- 
- | customer_id | order_date | product_name | price | member | ranking |
-| ----------- | ---------- | ------------ | ----- | ------ | ------- |
-| A           | 2021-01-01 | curry        | 15    | N      |         |
-| A           | 2021-01-01 | sushi        | 10    | N      |         |
-| A           | 2021-01-07 | curry        | 15    | Y      | 1       |
-| A           | 2021-01-10 | ramen        | 12    | Y      | 2       |
-| A           | 2021-01-11 | ramen        | 12    | Y      | 3       |
-| A           | 2021-01-11 | ramen        | 12    | Y      | 3       |
-| B           | 2021-01-01 | curry        | 15    | N      |         |
-| B           | 2021-01-02 | curry        | 15    | N      |         |
-| B           | 2021-01-04 | sushi        | 10    | N      |         |
-| B           | 2021-01-11 | sushi        | 10    | Y      | 1       |
-| B           | 2021-01-16 | ramen        | 12    | Y      | 2       |
-| B           | 2021-02-01 | ramen        | 12    | Y      | 3       |
-| C           | 2021-01-01 | ramen        | 12    | N      |         |
-| C           | 2021-01-01 | ramen        | 12    | N      |         |
-| C           | 2021-01-07 | ramen        | 12    | N      |         |
+| customer_id | order_date | product_name | price | member | ranking  |
+| ----------- | ---------- | ------------ | ----- | ------ | -------- |
+| A           | 2021-01-01 | curry        | 15    | N      | null     |
+| A           | 2021-01-01 | sushi        | 10    | N      | null     |
+| A           | 2021-01-07 | curry        | 15    | Y      | 1        |
+| A           | 2021-01-10 | ramen        | 12    | Y      | 2        |
+| A           | 2021-01-11 | ramen        | 12    | Y      | 3        |
+| A           | 2021-01-11 | ramen        | 12    | Y      | 3        |
+| B           | 2021-01-01 | curry        | 15    | N      | null     |
+| B           | 2021-01-02 | curry        | 15    | N      | null     |
+| B           | 2021-01-04 | sushi        | 10    | N      | null     |
+| B           | 2021-01-11 | sushi        | 10    | Y      | 1        | 
+| B           | 2021-01-16 | ramen        | 12    | Y      | 2        |
+| B           | 2021-02-01 | ramen        | 12    | Y      | 3        |
+| C           | 2021-01-01 | ramen        | 12    | N      | null     |
+| C           | 2021-01-01 | ramen        | 12    | N      | null     |
+| C           | 2021-01-07 | ramen        | 12    | N      | null     |
 
 ---
