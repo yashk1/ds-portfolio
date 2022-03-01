@@ -14,3 +14,8 @@ This repository is a compilation of notebooks which I created for data analysis 
 
 	- [Spotify Song Popularity prediction](https://www.kaggle.com/yashk1/song-popularity): Predicting the popularity of a song based on acousticness, danceability, loudness, etc. by getting the data from Spotify's Valence API
 	- [Predicting used car price](https://github.com/yashk1/ds-portfolio/blob/main/Projects/Craiglist%20car%20sales%20price%20prediction/Code/Car_sales_price_prediction.ipynb): Craigslist is the world's largest collection of used vehicles for sale. In this analysis using craiglist car sales data, I have predicted the price of the car and determined the best time to buy and sell a car to minimize the value lost
+
+- ### Data Analysis 
+
+	- [The OG Titanic Dataset- Exploratory analysis](https://www.kaggle.com/yashk1/titanic-eda): Exploratory Analysis of the passengers onboard RMS Titanic using Pandas and Seaborn visualisations.
+
