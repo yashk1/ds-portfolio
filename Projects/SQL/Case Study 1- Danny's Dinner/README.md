@@ -59,7 +59,7 @@ The final members table captures the `join_date` when a `customer_id` joined the
 
 
 ## Case Study Questions
-[Solution](https://github.com/yashk1/ds-portfolio/blob/main/Projects/SQL/Solution.md)
+[Solution](https://github.com/yashk1/ds-portfolio/blob/main/Projects/SQL/Case%20Study%201-%20Danny's%20Dinner/Solution.md)
 
 1. What is the total amount each customer spent at the restaurant?
 
