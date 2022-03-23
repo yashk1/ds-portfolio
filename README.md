@@ -8,9 +8,9 @@ This repository is a compilation of notebooks which I created for data analysis 
 - ### SQL
 
 	- [Case Study 1 - Danny's Dinner](https://github.com/yashk1/ds-portfolio/tree/main/Projects/SQL/Case%20Study%201-%20Danny's%20Dinner): 
-	- 	Explored the data about a new Japanese food diner (Danny's Dinner) to help them decide whether they should expand existing customer loyalty program by answering few questions about their customers and their visiting patterns, how much money customers have spent, and customers favourite menu items.
+		- Explored the data about a new Japanese food diner (Danny's Dinner) to help them decide whether they should expand existing customer loyalty program by answering few questions about their customers and their visiting patterns, how much money customers have spent, and customers favourite menu items.
 	- [Case Study 2 - Pizza runner](https://github.com/yashk1/ds-portfolio/tree/main/Projects/SQL/Case%20Study%201-%20Danny's%20Dinner): 
-	- 	Danny is expanding his new Pizza Empire and at the same time, he wants to Uberize it, so Pizza Runner was launched! Danny started by recruiting “runners” to deliver fresh pizza from Pizza Runner Headquarters (otherwise known as Danny’s house) and also maxed out his credit card to pay freelance developers to build a mobile app to accept orders from customers. 
+		- Danny is expanding his new Pizza Empire and at the same time, he wants to Uberize it, so Pizza Runner was launched! Danny started by recruiting “runners” to deliver fresh pizza from Pizza Runner Headquarters (otherwise known as Danny’s house) and also maxed out his credit card to pay freelance developers to build a mobile app to accept orders from customers. 
 		
 - ### Machine Learning
 
