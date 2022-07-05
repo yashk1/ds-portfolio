@@ -1,92 +1,386 @@
-# Case Study #2 Pizza Runner
-
-<img src="https://user-images.githubusercontent.com/81607668/127271856-3c0d5b4a-baab-472c-9e24-3c1e3c3359b2.png" alt="Image" width="500" height="520">
+# Case Study 1: Danny's Diner 
+<img src="https://user-images.githubusercontent.com/81607668/127727503-9d9e7a25-93cb-4f95-8bd0-20b87cb4b459.png" alt="Image" width="500" height="520">
 
 ## Table of Contents
 - [Business Task](#business-task)
-- [Entity Relationship Diagram (ERD)](#entity-relationship-diagram)
-- Solution
-  - [Data Cleaning and Transformation](https://github.com/yashk1/ds-portfolio/blob/main/Projects/SQL/Case%20Study%202%20-%20Pizza%20Runner/Data%20Cleaning%20and%20Transformation.md)
-  - [1. Pizza Metrics](https://github.com/yashk1/ds-portfolio/blob/main/Projects/SQL/Case%20Study%202%20-%20Pizza%20Runner/A.%20Pizza%20Metrics.md)
-  - [2. Runner and Customer Experience](https://github.com/yashk1/ds-portfolio/blob/main/Projects/SQL/Case%20Study%202%20-%20Pizza%20Runner/B.%20Runner%20and%20Customer%20Experience.md)
+- [Entity Relationship Diagram](#entity-relationship-diagram)
+- [Case Study Questions](#case-study-questions)
+- [Solution on Github](hhttps://github.com/yashk1/ds-portfolio/blob/sql-case-studies/Projects/SQL/Case%20Study%201-%20Danny's%20Dinner/Solution.md)
 
 
 ***
 
 ## Business Task
-Danny is expanding his new Pizza Empire and at the same time, he wants to Uberize it, so Pizza Runner was launched!
-
-Danny started by recruiting “runners” to deliver fresh pizza from Pizza Runner Headquarters (otherwise known as Danny’s house) and also maxed out his credit card to pay freelance developers to build a mobile app to accept orders from customers. 
+Danny wants to use the data to answer a few simple questions about his customers, especially about their visiting patterns, how much money they’ve spent and also which menu items are their favourite. 
 
 ## Entity Relationship Diagram
 
-![image](https://user-images.githubusercontent.com/81607668/127271531-0b4da8c7-8b24-4a14-9093-0795c4fa037e.png)
+![image](https://user-images.githubusercontent.com/81607668/127271130-dca9aedd-4ca9-4ed8-b6ec-1e1920dca4a8.png)
 
 ## Case Study Questions
 
-### A. Pizza Metrics
-1. How many pizzas were ordered?
-2. How many unique customer orders were made?
-3. How many successful orders were delivered by each runner?
-4. How many of each type of pizza was delivered?
-5. How many Vegetarian and Meatlovers were ordered by each customer?
-6. What was the maximum number of pizzas delivered in a single order?
-7. For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
-8. How many pizzas were delivered that had both exclusions and extras?
-9. What was the total volume of pizzas ordered for each hour of the day?
-10. What was the volume of orders for each day of the week?
+<details>
+<summary>
+View questions
+</summary>
+
+1. What is the total amount each customer spent at the restaurant?
+2. How many days has each customer visited the restaurant?
+3. What was the first item from the menu purchased by each customer?
+4. What is the most purchased item on the menu and how many times was it purchased by all customers?
+5. Which item was the most popular for each customer?
+6. Which item was purchased first by the customer after they became a member?
+7. Which item was purchased just before the customer became a member?
+10. What is the total items and amount spent for each member before they became a member?
+11. If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
+12. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
+</details>
+
+***
 
 <details>
     <summary>Solution </summary>
+
+#### 1. What is the total amount each customer spent at the restaurant?
+
+````sql
+select s.customer_id , sum(m.price) as total_amount_spent
+from dannys_diner.sales s inner join dannys_diner.menu m on s.product_id = m.product_id
+group by s.customer_id 
+order by sum(m.price) DESC
+  ````
+
+| customer_id | total_spent |
+| ----------- | ----------- |
+| A           | 76          |
+| B           | 74          |
+| C           | 36          |
+
+---
+#### 2. How many days has each customer visited the restaurant?
+
+````sql
+select customer_id, count(distinct order_date) as num_of_days_visited
+from dannys_diner.sales 
+group by customer_id
+  ````
+  
+| customer_id | num_days_of_visited |
+| ----------- | ------------------- |
+| A           | 4                   |
+| B           | 6                   |
+| C           | 2                   |
+
+---
+
+#### 3. What was the first item from the menu purchased by each customer?
+
+To get the first item we need to rank the items ordered by each customer in a temporary table using `WITH` statement. 
+
+After we have those ranks, we can select the rows with the rank = 1. 
+
+````sql
+with item_rank_by_order_date as (
+select s.customer_id, s.product_id, m.product_name, dense_rank() over(partition by s.customer_id order by s.order_date) as rnk
+from dannys_diner.sales s inner join dannys_diner.menu m 
+on s.product_id = m.product_id)
+
+select customer_id, product_name 
+from item_rank_by_order_date
+where rnk=1
+````  
+| customer_id | product_name |
+| ----------- | ------------ |
+| A           | sushi        |
+| A           | curry        |
+| B           | curry        |
+| C           | ramen        |
+| C           | ramen        |
+
+---
+ 
+  
+The first purchase for customer A was :sushi
+
+The first purchase for customer B was :curry:
+
+The first (and the only) purchase for customer C was :ramen:
+
+#### 4. What is the most purchased item on the menu and how many times was it purchased by all customers?
+
+````sql
+select product_id, count(*) from dannys_diner.sales
+group by product_id
+  ````
+| product_id   | count                   |
+| ------------ | ----------------------- |
+| 3            | 8                       |
+| 2            | 4                       |
+| 1            | 3                       |
+
+
+---
+ 
+The most purchased item on the menu was :ramen:, it was purchased 8 times in total
+
+#### 5. Which item was the most popular for each customer?
+
+Let's look at all the results sorted by purchase frequency:
+
+````sql
+SET
+  search_path = dannys_diner;
+SELECT
+  customer_id,
+  product_name,
+  COUNT(product_name) AS total_purchase_quantity
+FROM
+  sales AS s
+  INNER JOIN menu AS m ON s.product_id = m.product_id
+GROUP BY
+  customer_id,
+  product_name
+ORDER BY
+  total_purchase_quantity DESC
+````
+
+| customer_id | product_name | total_purchase_quantity |
+| ----------- | ------------ | ----------------------- |
+| C           | ramen        | 3                       |
+| A           | ramen        | 3                       |
+| B           | curry        | 2                       |
+| B           | sushi        | 2                       |
+| B           | ramen        | 2                       |
+| A           | curry        | 2                       |
+| A           | sushi        | 1                       |
+
+---
+
+ 
+The most popular item for customer A was :ramen:, they purchased it 3 times
+
+The most popular item for customer B was :curry:, :ramen: and :sushi:, they purchased each dish 2 times
+
+The most popular item for customer C was :ramen:, they purchased it 3 times
+
+#### 6. Which item was purchased first by the customer after they became a member?
+
+Let's consider that if the purchase date matches the membership date, then the purchase made on this date, was the first customer's purchase as a member. 
+It means that we need to include this date in the WHERE statement.
+
+````sql
+WITH member_sales_cte AS 
+(
+ SELECT s.customer_id, m.join_date, s.order_date,   s.product_id,
+         DENSE_RANK() OVER(PARTITION BY s.customer_id
+  ORDER BY s.order_date) AS rank
+     FROM dannys_diner.sales AS s
+ JOIN dannys_diner.members AS m
+  ON s.customer_id = m.customer_id
+ WHERE s.order_date >= m.join_date
+)
+
+SELECT s.customer_id,m.join_date, s.order_date, m2.product_name 
+FROM member_sales_cte AS s
+JOIN dannys_diner.menu AS m2
+ ON s.product_id = m2.product_id
+WHERE rank = 1;
+  ````
+
+| customer_id | join_date  | order_date | product_name |
+| ----------- | ---------- | ---------- | ------------ |
+| A           | 2021-01-07 | 2021-01-07 | curry        |
+| B           | 2021-01-09 | 2021-01-11 | sushi        |
+
+---
+
+#### 7. Which item was purchased just before the customer became a member?
+
+Customer A purchased their membership on January, 7 - and they placed an order that day. 
+We do not have time and therefore can not say exactly if this purchase was made before of after they became a member. 
+Let's consider that if the purchase date matches the membership date, then the purchase made on this date, was the first customer's purchase as a member. 
+It means that we need to exclude this date in the `WHERE` statement.
+
+````sql
+with customer_purchase_before_join_date as(select s.customer_id, m.join_date, s.product_id, s.order_date,
+dense_rank() over(partition by s.customer_id order by s.order_date DESC) as rnk
+from dannys_diner.sales s join dannys_diner.members m 
+on m.customer_id = s.customer_id 
+where s.order_date < m.join_date)
+
+select customer_id,join_date, order_date , t2.product_name
+from customer_purchase_before_join_date t1
+join dannys_diner.menu t2
+on t1.product_id=t2.product_id
+where rnk =1
+  ````
+
+| customer_id | join_date  | order_date | product_name |
+| ----------- | ---------- | ---------- | ------------ |
+| B           | 2021-01-09 | 2021-01-04 | sushi        |
+| A           | 2021-01-07 | 2021-01-01 | sushi        |
+| A           | 2021-01-07 | 2021-01-01 | curry        |
+
+
+---
+
+Customer A purchased two items on January, 1 - the date before they became a member. 
+We need more information to tell exactly what item was purchased before they became a member: order number or purchase time. I am keeping two items in the list for now.
+
+Customer B purchased :sushi: on 2021-01-04
+
+Customer A purchased :curry: and :sushi: on 2021-01-01
+
+#### 8. What is the total items and amount spent for each member before they became a member?
+
+Let's consider that if the purchase date matches the membership date, then the purchase made on this date, was the first customer's purchase as a member. 
+It means that we need to exclude this date in the WHERE statement.
+
+````sql
+select mem.customer_id, count(distinct m.product_id) , sum(price) as amount_spent_before_joining
+from dannys_diner.menu m join dannys_diner.sales s
+on m.product_id = s.product_id
+inner join dannys_diner.members mem 
+on mem.customer_id = s.customer_id
+where s.order_date < mem.join_date 
+group by mem.customer_id
+  ````
+
+| customer_id | count                 | amount_spent_before_joining |
+| ----------- | --------------------- | --------------------------- |
+| A           | 2                     | 25                          |
+| B           | 3                     | 40                          |
+
+---
+
+#### 9. If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
+
+````sql
+select s.customer_id , 
+Sum(case 
+  when 
+    m.product_name ='sushi' then m.price *10 * 2 
+    else m.price * 10 
+END) as points
+from dannys_diner.menu m inner join dannys_diner.sales s 
+on m.product_id = s.product_id
+group by s.customer_id
+  ````
+
+| customer_id | points |
+| ----------- | ------ |
+| B           | 940    |
+| C           | 360    |
+| A           | 860    |
+
+---
+
+#### 10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
+
+First we need to count points as usual: 10 points for each dollar spent on :curry: and :ramen: and 20 points for each dollar spent on :sushi:. 
+We add this calculation to the `CTE` using `WITH` statement. Next we use this `CTE` to add extra 10 points for all the purchases of :curry: and :ramen: made by customers on the first week of their membership and return the sum of new points. The points for :sushi: remain the same - 20 points.
+
+````sql
+SET
+  search_path = dannys_diner;
+WITH count_points AS (
+    SELECT
+      s.customer_id,
+      order_date,
+      join_date,
+      product_name,
+      SUM(point) AS point
+    FROM
+      sales AS s
+      JOIN (
+        SELECT
+          product_id,
+          product_name,
+          CASE
+            WHEN product_name = 'sushi' THEN price * 20
+            ELSE price * 10
+          END AS point
+        FROM
+          menu AS m
+      ) AS p ON s.product_id = p.product_id
+      JOIN members AS mm ON s.customer_id = mm.customer_id
+    GROUP BY
+      s.customer_id,
+      order_date,
+      join_date,
+      product_name,
+      point
+  )
+SELECT
+  customer_id,
+  SUM(
+    CASE
+      WHEN order_date >= join_date
+      AND order_date < join_date + (7 * INTERVAL '1 day')
+      AND product_name != 'sushi' THEN point * 2
+      ELSE point
+    END
+  ) AS new_points
+FROM
+  count_points
+WHERE
+  DATE_PART('month', order_date) = 1
+GROUP BY
+  1
+ORDER BY
+  1
+  ````
+
+| customer_id | new_points |
+| ----------- | ---------- |
+| A           | 1370       |
+| B           | 820        |
+
+---
+
+Customer A at the end of January would have 1370 points
+
+Customer B at the end of January would have 820 points*** and 0 benefits from their first week membership
+
+## Bonus Questions
+
+### Join  and Rank All The Things
+
+````sql
+with cte as (select s.customer_id, s.order_date, m.product_name , m.price,
+case when s.order_date < mem.join_date then 'N'
+else 'Y'
+END as member
+from dannys_diner.sales s inner join dannys_diner.menu m 
+on s.product_id = m.product_id
+inner join dannys_diner.members mem 
+on mem.customer_id = s.customer_id
+order by s.customer_id, s.order_date)
+
+select *, case when member='N' then NULL
+else dense_rank() over (partition by customer_id,member order by order_date)
+end as ranking
+from cte
+````
+
+| customer_id | order_date | product_name | price | member | ranking  |
+| ----------- | ---------- | ------------ | ----- | ------ | -------- |
+| A           | 2021-01-01 | curry        | 15    | N      | null     |
+| A           | 2021-01-01 | sushi        | 10    | N      | null     |
+| A           | 2021-01-07 | curry        | 15    | Y      | 1        |
+| A           | 2021-01-10 | ramen        | 12    | Y      | 2        |
+| A           | 2021-01-11 | ramen        | 12    | Y      | 3        |
+| A           | 2021-01-11 | ramen        | 12    | Y      | 3        |
+| B           | 2021-01-01 | curry        | 15    | N      | null     |
+| B           | 2021-01-02 | curry        | 15    | N      | null     |
+| B           | 2021-01-04 | sushi        | 10    | N      | null     |
+| B           | 2021-01-11 | sushi        | 10    | Y      | 1        | 
+| B           | 2021-01-16 | ramen        | 12    | Y      | 2        |
+| B           | 2021-02-01 | ramen        | 12    | Y      | 3        |
+| C           | 2021-01-01 | ramen        | 12    | N      | null     |
+| C           | 2021-01-01 | ramen        | 12    | N      | null     |
+| C           | 2021-01-07 | ramen        | 12    | N      | null     |
+
+---
+
 </details>
-
-### B. Runner and Customer Experience
-
-View my solution [here](https://github.com/katiehuangx/8-Week-SQL-Challenge/blob/main/Case%20Study%20%232%20-%20Pizza%20Runner/B.%20Runner%20and%20Customer%20Experience.md).
-
-1. How many runners signed up for each 1 week period? (i.e. week starts 2021-01-01)
-2. What was the average time in minutes it took for each runner to arrive at the Pizza Runner HQ to pickup the order?
-3. Is there any relationship between the number of pizzas and how long the order takes to prepare?
-4. What was the average distance travelled for each customer?
-5. What was the difference between the longest and shortest delivery times for all orders?
-6. What was the average speed for each runner for each delivery and do you notice any trend for these values?
-7. What is the successful delivery percentage for each runner?
-
-### C. Ingredient Optimisation
-
-1. What are the standard ingredients for each pizza?
-2. What was the most commonly added extra?
-3. What was the most common exclusion?
-4. Generate an order item for each record in the customers_orders table in the format of one of the following:
-- Meat Lovers
-- Meat Lovers - Exclude Beef
-- Meat Lovers - Extra Bacon
-- Meat Lovers - Exclude Cheese, Bacon - Extra Mushroom, Peppers
-5. Generate an alphabetically ordered comma separated ingredient list for each pizza order from the customer_orders table and add a 2x in front of any relevant ingredients
-6. For example: "Meat Lovers: 2xBacon, Beef, ... , Salami"
-7. What is the total quantity of each ingredient used in all delivered pizzas sorted by most frequent first?
-
-### D. Pricing and Ratings
-
-1. If a Meat Lovers pizza costs $12 and Vegetarian costs $10 and there were no charges for changes - how much money has Pizza Runner made so far if there are no delivery fees?
-2. What if there was an additional $1 charge for any pizza extras?
-- Add cheese is $1 extra
-3. The Pizza Runner team now wants to add an additional ratings system that allows customers to rate their runner, how would you design an additional table for this new dataset generate a schema for this new table and insert your own data for ratings for each successful customer order between 1 to 5.
-4. Using your newly generated table - can you join all of the information together to form a table which has the following information for successful deliveries?
-- customer_id
-- order_id
-- runner_id
-- rating
-- order_time
-- pickup_time
-- Time between order and pickup
-- Delivery duration
-- Average speed
-- Total number of pizzas
-5. If a Meat Lovers pizza was $12 and Vegetarian $10 fixed prices with no cost for extras and each runner is paid $0.30 per kilometre traveled - how much money does Pizza Runner have left over after these deliveries?
-
-### E. Bonus Questions
-
-If Danny wants to expand his range of pizzas - how would this impact the existing data design? Write an INSERT statement to demonstrate what would happen if a new Supreme pizza with all the toppings was added to the Pizza Runner menu?
-
-***

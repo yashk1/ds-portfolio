@@ -1,17 +1,15 @@
-# 🍕 Case Study #2 Pizza Runner
+# Case Study #2 Pizza Runner
 
 <img src="https://user-images.githubusercontent.com/81607668/127271856-3c0d5b4a-baab-472c-9e24-3c1e3c3359b2.png" alt="Image" width="500" height="520">
 
-## 📚 Table of Contents
+## Table of Contents
 - [Business Task](#business-task)
-- [Entity Relationship Diagram](#entity-relationship-diagram)
-- [Case Study Questions](#case-study-questions)
+- [Entity Relationship Diagram (ERD)](#entity-relationship-diagram)
 - Solution
-  - [Data Cleaning and Transformation](https://github.com/katiehuangx/8-Week-SQL-Challenge/blob/main/Case%20Study%20%232%20-%20Pizza%20Runner/Data%20Cleaning%20and%20Transformation.md)
-  - [A. Pizza Metrics](https://github.com/katiehuangx/8-Week-SQL-Challenge/blob/main/Case%20Study%20%232%20-%20Pizza%20Runner/A.%20Pizza%20Metrics.md)
-  - [B. Runner and Customer Experience](https://github.com/katiehuangx/8-Week-SQL-Challenge/blob/main/Case%20Study%20%232%20-%20Pizza%20Runner/B.%20Runner%20and%20Customer%20Experience.md)
-  - [Complete SQL Syntax](https://github.com/katiehuangx/8-Week-SQL-Challenge/tree/main/Case%20Study%20%232%20-%20Pizza%20Runner/SQL%20Syntax)
-- [Solution on Medium](https://medium.com/analytics-vidhya/8-week-sql-challenge-case-study-2-pizza-runner-ba32f0a6f9fb?source=friends_link&sk=5463dad7c9b0b1ba83d570f09e1fce90)
+  - [Data Cleaning and Transformation](https://github.com/yashk1/ds-portfolio/blob/main/Projects/SQL/Case%20Study%202%20-%20Pizza%20Runner/Data%20Cleaning%20and%20Transformation.md)
+  - [1. Pizza Metrics](https://github.com/yashk1/ds-portfolio/blob/main/Projects/SQL/Case%20Study%202%20-%20Pizza%20Runner/A.%20Pizza%20Metrics.md)
+  - [2. Runner and Customer Experience](https://github.com/yashk1/ds-portfolio/blob/main/Projects/SQL/Case%20Study%202%20-%20Pizza%20Runner/B.%20Runner%20and%20Customer%20Experience.md)
+
 
 ***
 
@@ -27,9 +25,6 @@ Danny started by recruiting “runners” to deliver fresh pizza from Pizza Runn
 ## Case Study Questions
 
 ### A. Pizza Metrics
-
-View my solution [here](https://github.com/katiehuangx/8-Week-SQL-Challenge/blob/main/Case%20Study%20%232%20-%20Pizza%20Runner/A.%20Pizza%20Metrics.md).
-
 1. How many pizzas were ordered?
 2. How many unique customer orders were made?
 3. How many successful orders were delivered by each runner?
@@ -40,6 +35,10 @@ View my solution [here](https://github.com/katiehuangx/8-Week-SQL-Challenge/blob
 8. How many pizzas were delivered that had both exclusions and extras?
 9. What was the total volume of pizzas ordered for each hour of the day?
 10. What was the volume of orders for each day of the week?
+
+<details>
+    <summary>Solution </summary>
+</details>
 
 ### B. Runner and Customer Experience
 
